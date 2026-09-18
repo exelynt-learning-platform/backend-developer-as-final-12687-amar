@@ -1,21 +1,22 @@
 package com.amar.resource_booking.security;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+
+import javax.crypto.SecretKey;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.stereotype.Service;
-
-import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class JwtService {
-	
-	@Value("${jwt.secret}")
-	private String secretKey;
+
+    @Value("${jwt.secret}")
+    private String secretKey;
 
     private final long expirationTime = 1000 * 60 * 60;
 
@@ -28,8 +29,10 @@ public class JwtService {
     public String generateToken(String username) {
 
         Date currentDate = new Date();
-        Date expirationDate =
-                new Date(currentDate.getTime() + expirationTime);
+
+        Date expirationDate = new Date(
+                currentDate.getTime() + expirationTime
+        );
 
         return Jwts.builder()
                 .subject(username)
@@ -40,7 +43,6 @@ public class JwtService {
     }
 
     public String extractUsername(String token) {
-
         return getClaims(token).getSubject();
     }
 
@@ -57,7 +59,7 @@ public class JwtService {
 
         String tokenUsername = extractUsername(token);
 
-        return tokenUsername.equals(username)
+        return username.equals(tokenUsername)
                 && !isTokenExpired(token);
     }
 
@@ -67,5 +69,4 @@ public class JwtService {
                 .getExpiration()
                 .before(new Date());
     }
-
 }

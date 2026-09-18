@@ -1,99 +1,96 @@
 package com.amar.resource_booking.service;
 
-
-
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-
 import com.amar.resource_booking.dto.ResourceRequest;
 import com.amar.resource_booking.dto.ResourceResponse;
 import com.amar.resource_booking.entity.Resource;
-import com.amar.resource_booking.repository.ResourceRepository;
 import com.amar.resource_booking.exception.ResourceNotFoundException;
-
+import com.amar.resource_booking.repository.ResourceRepository;
 
 @Service
 public class ResourceService {
-	
-	
-	 private final ResourceRepository resourceRepository;
 
-	    public ResourceService(ResourceRepository resourceRepository) {
-	        this.resourceRepository = resourceRepository;
-	    }
+    private final ResourceRepository resourceRepository;
 
-	    public ResourceResponse createResource(ResourceRequest request) {
+    public ResourceService(ResourceRepository resourceRepository) {
+        this.resourceRepository = resourceRepository;
+    }
 
-	        Resource resource = new Resource();
+    public ResourceResponse createResource(ResourceRequest request) {
 
-	        resource.setName(request.getName());
-	        resource.setDescription(request.getDescription());
-	        resource.setType(request.getType());
-	        resource.setAvailable(request.isAvailable());
-	        resource.setPrice(request.getPrice());
+        Resource resource = new Resource();
 
-	        Resource savedResource = resourceRepository.save(resource);
+        resource.setName(request.getName());
+        resource.setDescription(request.getDescription());
+        resource.setType(request.getType());
+        resource.setAvailable(request.isAvailable());
+        resource.setPrice(request.getPrice());
 
-	        return mapToResponse(savedResource);
-	    }
+        Resource savedResource = resourceRepository.save(resource);
 
-	    public List<ResourceResponse> getAllResources() {
+        return mapToResponse(savedResource);
+    }
 
-	        return resourceRepository.findAll()
-	                .stream()
-	                .map(this::mapToResponse)
-	                .toList();
-	    }
+    public List<ResourceResponse> getAllResources() {
 
-	    public ResourceResponse getResourceById(Long id) {
+        return resourceRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .toList();
+    }
 
-	        Resource resource = resourceRepository.findById(id)
-	                .orElseThrow(() ->
-	                        new ResourceNotFoundException("Resource not found with id: " + id));
+    public ResourceResponse getResourceById(Long id) {
 
-	        return mapToResponse(resource);
-	    }
+        Resource resource = resourceRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Resource not found with id: " + id));
 
-	    public ResourceResponse updateResource(Long id, ResourceRequest request) {
+        return mapToResponse(resource);
+    }
 
-	        Resource resource = resourceRepository.findById(id)
-	                .orElseThrow(() ->
-	                        new ResourceNotFoundException("Resource not found with id: " + id));
+    public ResourceResponse updateResource(
+            Long id,
+            ResourceRequest request) {
 
-	        resource.setName(request.getName());
-	        resource.setDescription(request.getDescription());
-	        resource.setType(request.getType());
-	        resource.setAvailable(request.isAvailable());
-	        resource.setPrice(request.getPrice());
+        Resource resource = resourceRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Resource not found with id: " + id));
 
-	        Resource updatedResource = resourceRepository.save(resource);
+        resource.setName(request.getName());
+        resource.setDescription(request.getDescription());
+        resource.setType(request.getType());
+        resource.setAvailable(request.isAvailable());
+        resource.setPrice(request.getPrice());
 
-	        return mapToResponse(updatedResource);
-	    }
+        Resource updatedResource = resourceRepository.save(resource);
 
-	    public void deleteResource(Long id) {
+        return mapToResponse(updatedResource);
+    }
 
-	        Resource resource = resourceRepository.findById(id)
-	                .orElseThrow(() ->
-	                        new ResourceNotFoundException("Resource not found with id: " + id));
+    public void deleteResource(Long id) {
 
-	        resourceRepository.delete(resource);
-	    }
+        Resource resource = resourceRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Resource not found with id: " + id));
 
-	    private ResourceResponse mapToResponse(Resource resource) {
+        resourceRepository.delete(resource);
+    }
 
-	        return new ResourceResponse(
-	                resource.getId(),
-	                resource.getName(),
-	                resource.getDescription(),
-	                resource.getType(),
-	                resource.isAvailable(),
-	                resource.getPrice()
-	        );
-	    }
+    private ResourceResponse mapToResponse(Resource resource) {
 
-	
-	
+        return new ResourceResponse(
+                resource.getId(),
+                resource.getName(),
+                resource.getDescription(),
+                resource.getType(),
+                resource.isAvailable(),
+                resource.getPrice()
+        );
+    }
 }

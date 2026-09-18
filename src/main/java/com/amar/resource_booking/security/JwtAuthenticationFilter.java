@@ -1,11 +1,7 @@
 package com.amar.resource_booking.security;
-import com.amar.resource_booking.entity.User;
-import com.amar.resource_booking.repository.UserRepository;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.List;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,75 +9,102 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.util.List;
+import com.amar.resource_booking.entity.User;
+import com.amar.resource_booking.repository.UserRepository;
+
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
-	
-	 private final JwtService jwtService;
-	    private final UserRepository userRepository;
 
-	    public JwtAuthenticationFilter(JwtService jwtService,
-	                                   UserRepository userRepository) {
-	        this.jwtService = jwtService;
-	        this.userRepository = userRepository;
-	    }
-	    
-	    @Override
-	    protected boolean shouldNotFilter(HttpServletRequest request) {
+    private final JwtService jwtService;
+    private final UserRepository userRepository;
 
-	        return request.getServletPath().equals("/auth/login");
-	    }
+    public JwtAuthenticationFilter(
+            JwtService jwtService,
+            UserRepository userRepository) {
 
+        this.jwtService = jwtService;
+        this.userRepository = userRepository;
+    }
 
-	    @Override
-	    protected void doFilterInternal(
-	            HttpServletRequest request,
-	            HttpServletResponse response,
-	            FilterChain filterChain) throws ServletException, IOException {
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
 
-	        String authorizationHeader = request.getHeader("Authorization");
+        String path = request.getServletPath();
 
-	        if (authorizationHeader == null ||
-	                !authorizationHeader.startsWith("Bearer ")) {
+        return path.equals("/auth/login")
+                || path.startsWith("/swagger-ui/")
+                || path.equals("/swagger-ui.html")
+                || path.startsWith("/v3/api-docs/");
+    }
 
-	            filterChain.doFilter(request, response);
-	            return;
-	        }
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain)
+            throws ServletException, IOException {
 
-	        String token = authorizationHeader.substring(7);
+        String authorizationHeader =
+                request.getHeader("Authorization");
 
-	        try {
-	            String username = jwtService.extractUsername(token);
+        if (authorizationHeader == null
+                || !authorizationHeader.startsWith("Bearer ")) {
 
-	            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-	                User user = userRepository.findByUsername(username)
-	                        .orElse(null);
+        String token = authorizationHeader.substring(7);
 
-	                if (user != null && jwtService.isTokenValid(token, username)) {
+        try {
 
-	                    String role = "ROLE_" + user.getRole().name();
+            String username = jwtService.extractUsername(token);
 
-	                    UsernamePasswordAuthenticationToken authentication =
-	                            new UsernamePasswordAuthenticationToken(
-	                                    username,
-	                                    null,
-	                                    List.of(new SimpleGrantedAuthority(role))
-	                            );
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
-	                    SecurityContextHolder.getContext()
-	                            .setAuthentication(authentication);
-	                }
-	            }
+                User user = userRepository.findByUsername(username)
+                        .orElse(null);
 
-	        } catch (Exception e) {
-	            // Invalid or expired token
-	            SecurityContextHolder.clearContext();
-	        }
+                if (user != null
+                        && jwtService.isTokenValid(token, username)) {
 
-	        filterChain.doFilter(request, response);
-	    }
+                    String role = "ROLE_" + user.getRole().name();
 
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(
+                                    username,
+                                    null,
+                                    List.of(
+                                            new SimpleGrantedAuthority(role)
+                                    )
+                            );
+
+                    SecurityContextHolder.getContext()
+                            .setAuthentication(authentication);
+                }
+            }
+
+            filterChain.doFilter(request, response);
+
+        } catch (JwtException | IllegalArgumentException exception) {
+
+            SecurityContextHolder.clearContext();
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+
+            response.getWriter().write("""
+                    {
+                        "status": 401,
+                        "message": "Invalid or expired JWT token"
+                    }
+                    """);
+        }
+    }
 }

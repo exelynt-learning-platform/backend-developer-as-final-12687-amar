@@ -1,19 +1,15 @@
 package com.amar.resource_booking.security;
 
-
-import com.amar.resource_booking.entity.User;
-import com.amar.resource_booking.repository.UserRepository;
+import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -21,158 +17,146 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import org.springframework.http.HttpMethod;
-
-
-import java.util.List;
+import com.amar.resource_booking.entity.User;
+import com.amar.resource_booking.repository.UserRepository;
 
 @Configuration
 public class SecurityConfig {
-	
-	 private final UserRepository userRepository;
-	    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-	    public SecurityConfig(UserRepository userRepository,
-	                          JwtAuthenticationFilter jwtAuthenticationFilter) {
-	        this.userRepository = userRepository;
-	        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
-	    }
+    private final UserRepository userRepository;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-	    @Bean
-	    public UserDetailsService userDetailsService() {
+    public SecurityConfig(
+            UserRepository userRepository,
+            JwtAuthenticationFilter jwtAuthenticationFilter) {
 
-	        return username -> {
+        this.userRepository = userRepository;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
-	            User user = userRepository.findByUsername(username)
-	                    .orElseThrow(() ->
-	                            new UsernameNotFoundException("User not found"));
+    @Bean
+    public UserDetailsService userDetailsService() {
 
-	            return new org.springframework.security.core.userdetails.User(
-	                    user.getUsername(),
-	                    user.getPassword(),
-	                    List.of(
-	                            new SimpleGrantedAuthority(
-	                                    "ROLE_" + user.getRole().name()
-	                            )
-	                    )
-	            );
-	        };
-	    }
+        return username -> {
 
-	    @Bean
-	    public PasswordEncoder passwordEncoder() {
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() ->
+                            new UsernameNotFoundException("User not found"));
 
-	        return new BCryptPasswordEncoder();
-	    }
+            return new org.springframework.security.core.userdetails.User(
+                    user.getUsername(),
+                    user.getPassword(),
+                    List.of(
+                            new SimpleGrantedAuthority(
+                                    "ROLE_" + user.getRole().name()
+                            )
+                    )
+            );
+        };
+    }
 
-	    @Bean
-	    public AuthenticationProvider authenticationProvider(
-	            UserDetailsService userDetailsService,
-	            PasswordEncoder passwordEncoder) {
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 
-	        DaoAuthenticationProvider provider =
-	                new DaoAuthenticationProvider(userDetailsService);
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration configuration)
+            throws Exception {
 
-	        provider.setPasswordEncoder(passwordEncoder);
+        return configuration.getAuthenticationManager();
+    }
 
-	        return provider;
-	    }
+    @Bean
+    public SecurityFilterChain securityFilterChain(
+            HttpSecurity http)
+            throws Exception {
 
-	    @Bean
-	    public AuthenticationManager authenticationManager(
-	            AuthenticationConfiguration configuration) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
 
-	        return configuration.getAuthenticationManager();
-	    }
+                .formLogin(form -> form.disable())
 
-	    @Bean
-	    public SecurityFilterChain securityFilterChain(
-	            HttpSecurity http,
-	            AuthenticationProvider authenticationProvider)
-	            throws Exception {
+                .httpBasic(basic -> basic.disable())
 
-	    	http
-	        .csrf(csrf -> csrf.disable())
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
 
-	        .formLogin(form -> form.disable())
+                .authorizeHttpRequests(auth -> auth
 
-	        .httpBasic(basic -> basic.disable())
+                        // Public endpoints
+                        .requestMatchers(
+                                "/auth/login",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
 
-	        .sessionManagement(session ->
-	                session.sessionCreationPolicy(
-	                        SessionCreationPolicy.STATELESS
-	                )
-	        )
+                        // Resource APIs
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/resources",
+                                "/api/resources/**"
+                        ).hasAnyRole("USER", "ADMIN")
 
-	        .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/resources"
+                        ).hasRole("ADMIN")
 
-	                .requestMatchers(
-	                        "/auth/login",
-	                        "/swagger-ui/**",
-	                        "/swagger-ui.html",
-	                        "/v3/api-docs/**"
-	                ).permitAll()
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/resources/**"
+                        ).hasRole("ADMIN")
 
-	                .requestMatchers(
-	                        HttpMethod.GET,
-	                        "/api/resources",
-	                        "/api/resources/**"
-	                ).hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/resources/**"
+                        ).hasRole("ADMIN")
 
-	                .requestMatchers(
-	                        HttpMethod.POST,
-	                        "/api/resources"
-	                ).hasRole("ADMIN")
+                        // Reservation APIs
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/api/reservations"
+                        ).hasAnyRole("USER", "ADMIN")
 
-	                .requestMatchers(
-	                        HttpMethod.PUT,
-	                        "/api/resources/**"
-	                ).hasRole("ADMIN")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/reservations/my"
+                        ).hasRole("USER")
 
-	                .requestMatchers(
-	                        HttpMethod.DELETE,
-	                        "/api/resources/**"
-	                ).hasRole("ADMIN")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/reservations"
+                        ).hasRole("ADMIN")
 
-	                .requestMatchers(
-	                        HttpMethod.POST,
-	                        "/api/reservations"
-	                ).hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/api/reservations/*"
+                        ).hasAnyRole("USER", "ADMIN")
 
-	                .requestMatchers(
-	                        HttpMethod.GET,
-	                        "/api/reservations/my"
-	                ).hasRole("USER")
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/reservations/*"
+                        ).hasRole("ADMIN")
 
-	                .requestMatchers(
-	                        HttpMethod.GET,
-	                        "/api/reservations"
-	                ).hasRole("ADMIN")
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/api/reservations/*"
+                        ).hasRole("ADMIN")
 
-	                .requestMatchers(
-	                        HttpMethod.GET,
-	                        "/api/reservations/**"
-	                ).hasAnyRole("USER", "ADMIN")
+                        .anyRequest().authenticated()
+                )
 
-	                .requestMatchers(
-	                        HttpMethod.PUT,
-	                        "/api/reservations/**"
-	                ).hasRole("ADMIN")
+                .addFilterBefore(
+                        jwtAuthenticationFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
 
-	                .requestMatchers(
-	                        HttpMethod.DELETE,
-	                        "/api/reservations/**"
-	                ).hasRole("ADMIN")
-
-	                .anyRequest().authenticated()
-	        )
-
-	                .addFilterBefore(
-	                        jwtAuthenticationFilter,
-	                        UsernamePasswordAuthenticationFilter.class
-	                );
-
-	        return http.build();
-	    }
-
+        return http.build();
+    }
 }

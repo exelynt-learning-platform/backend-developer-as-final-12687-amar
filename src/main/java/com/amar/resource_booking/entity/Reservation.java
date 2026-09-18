@@ -19,91 +19,87 @@ import jakarta.persistence.Table;
 @Table(name = "reservations")
 public class Reservation {
 
-	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "user_id", nullable = false)
-	private User user;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
-	@ManyToOne(fetch = FetchType.LAZY, optional = false)
-	@JoinColumn(name = "resource_id", nullable = false)
-	private Resource resource;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "resource_id", nullable = false)
+    private Resource resource;
 
-	@Column(nullable = false)
-	private LocalDateTime startDate;
+    @Column(nullable = false)
+    private LocalDateTime startDate;
 
-	@Column(nullable = false)
-	private LocalDateTime endDate;
+    @Column(nullable = false)
+    private LocalDateTime endDate;
 
-	@Column(nullable = false, precision = 10, scale = 2)
-	private BigDecimal price;
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
 
-	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
-	private ReservationStatus status;
-	
-	 public Reservation() {
-		 
-	    }
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ReservationStatus status;
 
-	 public Long getId() {
-		 return id;
-	 }
+    public Reservation() {
+    }
 
-	 public void setId(Long id) {
-		 this.id = id;
-	 }
+    public Long getId() {
+        return id;
+    }
 
-	 public User getUser() {
-		 return user;
-	 }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	 public void setUser(User user) {
-		 this.user = user;
-	 }
+    public User getUser() {
+        return user;
+    }
 
-	 public Resource getResource() {
-		 return resource;
-	 }
+    public void setUser(User user) {
+        this.user = user;
+    }
 
-	 public void setResource(Resource resource) {
-		 this.resource = resource;
-	 }
+    public Resource getResource() {
+        return resource;
+    }
 
-	 public LocalDateTime getStartDate() {
-		 return startDate;
-	 }
+    public void setResource(Resource resource) {
+        this.resource = resource;
+    }
 
-	 public void setStartDate(LocalDateTime startDate) {
-		 this.startDate = startDate;
-	 }
+    public LocalDateTime getStartDate() {
+        return startDate;
+    }
 
-	 public LocalDateTime getEndDate() {
-		 return endDate;
-	 }
+    public void setStartDate(LocalDateTime startDate) {
+        this.startDate = startDate;
+    }
 
-	 public void setEndDate(LocalDateTime endDate) {
-		 this.endDate = endDate;
-	 }
+    public LocalDateTime getEndDate() {
+        return endDate;
+    }
 
-	 public BigDecimal getPrice() {
-		 return price;
-	 }
+    public void setEndDate(LocalDateTime endDate) {
+        this.endDate = endDate;
+    }
 
-	 public void setPrice(BigDecimal price) {
-		 this.price = price;
-	 }
+    public BigDecimal getPrice() {
+        return price;
+    }
 
-	 public ReservationStatus getStatus() {
-		 return status;
-	 }
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
 
-	 public void setStatus(ReservationStatus status) {
-		 this.status = status;
-	 }
-	 
-	 
+    public ReservationStatus getStatus() {
+        return status;
+    }
 
+    public void setStatus(ReservationStatus status) {
+        this.status = status;
+    }
 }
