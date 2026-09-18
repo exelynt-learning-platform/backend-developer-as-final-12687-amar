@@ -22,6 +22,7 @@ import com.amar.resource_booking.repository.ReservationRepository;
 import com.amar.resource_booking.repository.ResourceRepository;
 import com.amar.resource_booking.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 
 @Service
 @Transactional
@@ -58,23 +59,18 @@ public class ReservationService {
             throw new BadRequestException("Resource is not available");
         }
 
-        if (!request.getStartDate().isBefore(request.getEndDate())) {
-            throw new BadRequestException(
-                    "Start date must be before end date"
-            );
-        }
-
-        List<ReservationStatus> activeStatuses = List.of(
-                ReservationStatus.PENDING,
-                ReservationStatus.CONFIRMED
+        validateDates(
+                request.getStartDate(),
+                request.getEndDate()
         );
 
+      
         boolean overlapping =
                 reservationRepository.existsOverlappingReservation(
                         resource.getId(),
                         request.getStartDate(),
                         request.getEndDate(),
-                        activeStatuses
+                        getActiveStatuses()
                 );
 
         if (overlapping) {
@@ -110,7 +106,6 @@ public class ReservationService {
 
         if (minPrice != null && maxPrice != null
                 && minPrice.compareTo(maxPrice) > 0) {
-
             throw new BadRequestException(
                     "minPrice cannot be greater than maxPrice"
             );
@@ -145,13 +140,14 @@ public class ReservationService {
 
         if (minPrice != null && maxPrice != null
                 && minPrice.compareTo(maxPrice) > 0) {
-
             throw new BadRequestException(
                     "minPrice cannot be greater than maxPrice"
             );
         }
 
         Sort sort = createSort(sortBy, sortDirection);
+
+      
 
    
         Pageable pageable = PageRequest.of(page, size, sort);
@@ -213,10 +209,7 @@ public class ReservationService {
             );
         }
 
-        List<ReservationStatus> activeStatuses = List.of(
-                ReservationStatus.PENDING,
-                ReservationStatus.CONFIRMED
-        );
+       
 
         boolean overlapping =
                 reservationRepository
@@ -224,10 +217,9 @@ public class ReservationService {
                                 resource.getId(),
                                 request.getStartDate(),
                                 request.getEndDate(),
-                                activeStatuses,
+                                getActiveStatuses(),
                                 id
                         );
-
         if (overlapping) {
             throw new BadRequestException(
                     "Resource is already reserved for the selected time"
@@ -293,6 +285,22 @@ public class ReservationService {
         );
     }
 
+    private void validateDates(
+            LocalDateTime startDate,
+            LocalDateTime endDate) {
+
+        if (!startDate.isBefore(endDate)) {
+            throw new BadRequestException(
+                    "Start date must be before end date"
+            );
+        }
+    }
+    private List<ReservationStatus> getActiveStatuses() {
+        return List.of(
+                ReservationStatus.PENDING,
+                ReservationStatus.CONFIRMED
+        );
+    }
     private ReservationResponse mapToResponse(
             Reservation reservation) {
 

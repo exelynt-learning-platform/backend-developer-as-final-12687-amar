@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -89,5 +90,16 @@ public class GlobalExceptionHandler {
                         "Invalid username or password",
                         request.getRequestURI()
                 ));
+    }
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<ErrorResponse> handleConstraintViolation(
+            ConstraintViolationException exception,
+            HttpServletRequest request) {
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(
+                        400,
+                        exception.getMessage(),
+                        request.getRequestURI()));
     }
 }

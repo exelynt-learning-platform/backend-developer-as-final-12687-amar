@@ -1,424 +1,253 @@
 package com.amar.resource_booking.service;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 
-import com.amar.resource_booking.dto.ReservationRequest;
-import com.amar.resource_booking.dto.ReservationResponse;
-import com.amar.resource_booking.entity.Reservation;
-import com.amar.resource_booking.entity.ReservationStatus;
+import com.amar.resource_booking.dto.ResourceRequest;
+import com.amar.resource_booking.dto.ResourceResponse;
 import com.amar.resource_booking.entity.Resource;
-import com.amar.resource_booking.entity.Role;
-import com.amar.resource_booking.entity.User;
-import com.amar.resource_booking.exception.BadRequestException;
-import com.amar.resource_booking.exception.ForbiddenException;
-import com.amar.resource_booking.exception.ResourceNotFoundException;
-import com.amar.resource_booking.repository.ReservationRepository;
 import com.amar.resource_booking.repository.ResourceRepository;
-import com.amar.resource_booking.repository.UserRepository;
 
 @ExtendWith(MockitoExtension.class)
-class ReservationServiceTest {
-
-    @Mock
-    private ReservationRepository reservationRepository;
-
-    @Mock
-    private UserRepository userRepository;
+class ResourceServiceTest {
 
     @Mock
     private ResourceRepository resourceRepository;
 
     @InjectMocks
-    private ReservationService reservationService;
-
-    private User user;
-    private User anotherUser;
-    private Resource resource;
-    private Reservation reservation;
-
-    @BeforeEach
-    void setUp() {
-
-        user = new User("user", "password", Role.USER);
-        user.setId(1L);
-
-        anotherUser = new User("another", "password", Role.USER);
-        anotherUser.setId(2L);
-
-        resource = new Resource(
-                "Conference Room",
-                "Meeting room",
-                "ROOM",
-                true,
-                new BigDecimal("600.00")
-        );
-        resource.setId(1L);
-
-        reservation = new Reservation();
-        reservation.setUser(user);
-        reservation.setResource(resource);
-        reservation.setStartDate(
-                LocalDateTime.of(2026, 9, 20, 10, 0)
-        );
-        reservation.setEndDate(
-                LocalDateTime.of(2026, 9, 20, 12, 0)
-        );
-        reservation.setPrice(new BigDecimal("600.00"));
-        reservation.setStatus(ReservationStatus.PENDING);
-    }
-
-    private ReservationRequest createRequest() {
-
-        ReservationRequest request =
-                new ReservationRequest();
-
-        request.setResourceId(1L);
-        request.setStartDate(
-                LocalDateTime.of(2026, 9, 20, 10, 0)
-        );
-        request.setEndDate(
-                LocalDateTime.of(2026, 9, 20, 12, 0)
-        );
-
-        return request;
-    }
+    private ResourceService resourceService;
 
     @Test
-    void createReservationShouldCreatePendingReservation() {
+    void createResourceShouldSaveResource() {
 
-        ReservationRequest request = createRequest();
+        ResourceRequest request = new ResourceRequest();
+        request.setName("Meeting Room");
+        request.setDescription("Test room");
+        request.setType("ROOM");
+        request.setAvailable(true);
+        request.setPrice(new BigDecimal("500.00"));
 
-        when(userRepository.findByUsername("user"))
-                .thenReturn(Optional.of(user));
+        when(resourceRepository.save(
+                org.mockito.ArgumentMatchers.any(Resource.class)
+        )).thenAnswer(invocation -> {
 
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
+            Resource saved = invocation.getArgument(0);
+            saved.setId(1L);
+            return saved;
+        });
 
-        when(reservationRepository
-                .existsOverlappingReservation(
-                        anyLong(),
-                        any(LocalDateTime.class),
-                        any(LocalDateTime.class),
-                        anyList()
-                ))
-                .thenReturn(false);
+        ResourceResponse response =
+                resourceService.createResource(request);
 
-        when(reservationRepository.save(any(Reservation.class)))
-                .thenReturn(reservation);
-
-        ReservationResponse response =
-                reservationService.createReservation(
-                        request,
-                        "user"
-                );
-
+        assertNotNull(response);
+        assertEquals(1L, response.getId());
+        assertEquals("Meeting Room", response.getName());
+        assertEquals("Test room", response.getDescription());
+        assertEquals("ROOM", response.getType());
+        assertEquals(true, response.isAvailable());
         assertEquals(
-                ReservationStatus.PENDING,
-                response.getStatus()
-        );
-
-        assertEquals(
-                new BigDecimal("600.00"),
+                new BigDecimal("500.00"),
                 response.getPrice()
         );
 
-        verify(reservationRepository)
-                .save(any(Reservation.class));
+        verify(resourceRepository).save(
+                org.mockito.ArgumentMatchers.any(Resource.class)
+        );
     }
-
     @Test
-    void createReservationShouldFailWhenResourceNotAvailable() {
+    void getResourceByIdShouldReturnResource() {
 
-        resource.setAvailable(false);
+        Resource resource = new Resource(
+                "Conference Room",
+                "Large room",
+                "ROOM",
+                true,
+                new BigDecimal("800.00")
+        );
 
-        ReservationRequest request = createRequest();
+        resource.setId(2L);
 
-        when(userRepository.findByUsername("user"))
-                .thenReturn(Optional.of(user));
-
-        when(resourceRepository.findById(1L))
+        when(resourceRepository.findById(2L))
                 .thenReturn(Optional.of(resource));
 
-        assertThrows(
-                BadRequestException.class,
-                () -> reservationService.createReservation(
-                        request,
-                        "user"
-                )
-        );
+        ResourceResponse response =
+                resourceService.getResourceById(2L);
 
-        verify(reservationRepository, never())
-                .save(any(Reservation.class));
-    }
-
-    @Test
-    void createReservationShouldFailWhenDatesAreInvalid() {
-
-        ReservationRequest request = createRequest();
-
-        request.setStartDate(
-                LocalDateTime.of(2026, 9, 20, 14, 0)
-        );
-
-        request.setEndDate(
-                LocalDateTime.of(2026, 9, 20, 12, 0)
-        );
-
-        when(userRepository.findByUsername("user"))
-                .thenReturn(Optional.of(user));
-
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
-
-        assertThrows(
-                BadRequestException.class,
-                () -> reservationService.createReservation(
-                        request,
-                        "user"
-                )
-        );
-    }
-
-    @Test
-    void createReservationShouldFailWhenTimeIsAlreadyReserved() {
-
-        ReservationRequest request = createRequest();
-
-        when(userRepository.findByUsername("user"))
-                .thenReturn(Optional.of(user));
-
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
-
-        when(reservationRepository
-                .existsOverlappingReservation(
-                        anyLong(),
-                        any(LocalDateTime.class),
-                        any(LocalDateTime.class),
-                        anyList()
-                ))
-                .thenReturn(true);
-
-        assertThrows(
-                BadRequestException.class,
-                () -> reservationService.createReservation(
-                        request,
-                        "user"
-                )
-        );
-    }
-
-    @Test
-    void getReservationByIdShouldAllowOwner() {
-
-        reservation.setId(1L);
-
-        when(reservationRepository.findById(1L))
-                .thenReturn(Optional.of(reservation));
-
-        ReservationResponse response =
-                reservationService.getReservationById(
-                        1L,
-                        "user",
-                        false
-                );
-
+        assertNotNull(response);
+        assertEquals(2L, response.getId());
+        assertEquals("Conference Room", response.getName());
+        assertEquals("Large room", response.getDescription());
+        assertEquals("ROOM", response.getType());
+        assertEquals(true, response.isAvailable());
         assertEquals(
-                ReservationStatus.PENDING,
-                response.getStatus()
+                new BigDecimal("800.00"),
+                response.getPrice()
         );
+
+        verify(resourceRepository).findById(2L);
     }
-
+    
     @Test
-    void getReservationByIdShouldRejectAnotherUser() {
+    void getAllResourcesShouldReturnResources() {
 
-        reservation.setId(1L);
-
-        when(reservationRepository.findById(1L))
-                .thenReturn(Optional.of(reservation));
-
-        assertThrows(
-                ForbiddenException.class,
-                () -> reservationService.getReservationById(
-                        1L,
-                        "another",
-                        false
-                )
+        Resource resource1 = new Resource(
+                "Meeting Room",
+                "Small meeting room",
+                "ROOM",
+                true,
+                new BigDecimal("500.00")
         );
+        resource1.setId(1L);
+
+        Resource resource2 = new Resource(
+                "Projector",
+                "HD Projector",
+                "EQUIPMENT",
+                true,
+                new BigDecimal("300.00")
+        );
+        resource2.setId(2L);
+
+        when(resourceRepository.findAll())
+                .thenReturn(java.util.List.of(resource1, resource2));
+
+        var responses = resourceService.getAllResources();
+
+        assertNotNull(responses);
+        assertEquals(2, responses.size());
+
+        assertEquals(1L, responses.get(0).getId());
+        assertEquals("Meeting Room", responses.get(0).getName());
+
+        assertEquals(2L, responses.get(1).getId());
+        assertEquals("Projector", responses.get(1).getName());
+
+        verify(resourceRepository).findAll();
     }
-
+    
     @Test
-    void getReservationByIdShouldAllowAdmin() {
+    void getResourceByIdShouldThrowExceptionWhenNotFound() {
 
-        reservation.setId(1L);
-
-        when(reservationRepository.findById(1L))
-                .thenReturn(Optional.of(reservation));
-
-        ReservationResponse response =
-                reservationService.getReservationById(
-                        1L,
-                        "admin",
-                        true
-                );
-
-        assertEquals(ReservationStatus.PENDING,
-                response.getStatus());
-    }
-
-    @Test
-    void getReservationByIdShouldThrowWhenNotFound() {
-
-        when(reservationRepository.findById(99L))
+        when(resourceRepository.findById(99L))
                 .thenReturn(Optional.empty());
 
-        assertThrows(
-                ResourceNotFoundException.class,
-                () -> reservationService.getReservationById(
-                        99L,
-                        "user",
-                        false
-                )
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.amar.resource_booking.exception.ResourceNotFoundException.class,
+                () -> resourceService.getResourceById(99L)
         );
+
+        verify(resourceRepository).findById(99L);
     }
-
+    
     @Test
-    void getMyReservationsShouldReturnUserReservations() {
+    void updateResourceShouldUpdateResource() {
 
-        reservation.setId(1L);
+        Resource existingResource = new Resource(
+                "Old Room",
+                "Old description",
+                "ROOM",
+                true,
+                new BigDecimal("400.00")
+        );
 
-        Page<Reservation> page =
-                new PageImpl<>(List.of(reservation));
+        existingResource.setId(1L);
 
-        when(userRepository.findByUsername("user"))
-                .thenReturn(Optional.of(user));
+        ResourceRequest request = new ResourceRequest();
+        request.setName("Updated Room");
+        request.setDescription("Updated description");
+        request.setType("CONFERENCE_ROOM");
+        request.setAvailable(false);
+        request.setPrice(new BigDecimal("700.00"));
 
-        when(reservationRepository.findMyReservations(
-                eq(1L),
-                isNull(),
-                isNull(),
-                isNull(),
-                any()
-        )).thenReturn(page);
+        when(resourceRepository.findById(1L))
+                .thenReturn(Optional.of(existingResource));
 
-        Page<ReservationResponse> result =
-                reservationService.getMyReservations(
-                        "user",
-                        null,
-                        null,
-                        null,
-                        0,
-                        5,
-                        "id",
-                        "asc"
-                );
+        when(resourceRepository.save(existingResource))
+                .thenReturn(existingResource);
 
-        assertEquals(1, result.getTotalElements());
+        ResourceResponse response =
+                resourceService.updateResource(1L, request);
+
+        assertNotNull(response);
+        assertEquals(1L, response.getId());
+        assertEquals("Updated Room", response.getName());
+        assertEquals("Updated description", response.getDescription());
+        assertEquals("CONFERENCE_ROOM", response.getType());
+        assertEquals(false, response.isAvailable());
         assertEquals(
-                "user",
-                result.getContent()
-                        .get(0)
-                        .getUsername()
+                new BigDecimal("700.00"),
+                response.getPrice()
         );
+
+        verify(resourceRepository).findById(1L);
+        verify(resourceRepository).save(existingResource);
     }
-
+    
     @Test
-    void getAllReservationsShouldReturnReservations() {
+    void updateResourceShouldThrowExceptionWhenNotFound() {
 
-        reservation.setId(1L);
+        ResourceRequest request = new ResourceRequest();
+        request.setName("Updated Room");
+        request.setDescription("Updated description");
+        request.setType("ROOM");
+        request.setAvailable(true);
+        request.setPrice(new BigDecimal("500.00"));
 
-        Page<Reservation> page =
-                new PageImpl<>(List.of(reservation));
+        when(resourceRepository.findById(99L))
+                .thenReturn(Optional.empty());
 
-        when(reservationRepository.findReservations(
-                isNull(),
-                isNull(),
-                isNull(),
-                any()
-        )).thenReturn(page);
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.amar.resource_booking.exception.ResourceNotFoundException.class,
+                () -> resourceService.updateResource(99L, request)
+        );
 
-        Page<ReservationResponse> result =
-                reservationService.getAllReservations(
-                        null,
-                        null,
-                        null,
-                        0,
-                        5,
-                        "id",
-                        "asc"
-                );
-
-        assertEquals(1, result.getTotalElements());
+        verify(resourceRepository).findById(99L);
     }
-
+    
     @Test
-    void updateReservationShouldUpdateStatus() {
+    void deleteResourceShouldDeleteResource() {
 
-        reservation.setId(1L);
+        Resource resource = new Resource(
+                "Meeting Room",
+                "Test room",
+                "ROOM",
+                true,
+                new BigDecimal("500.00")
+        );
 
-        ReservationRequest request = createRequest();
-        request.setStatus(ReservationStatus.CONFIRMED);
-
-        when(reservationRepository.findById(1L))
-                .thenReturn(Optional.of(reservation));
+        resource.setId(1L);
 
         when(resourceRepository.findById(1L))
                 .thenReturn(Optional.of(resource));
 
-        when(reservationRepository
-                .existsOverlappingReservationForUpdate(
-                        anyLong(),
-                        any(LocalDateTime.class),
-                        any(LocalDateTime.class),
-                        anyList(),
-                        anyLong()
-                ))
-                .thenReturn(false);
+        resourceService.deleteResource(1L);
 
-        when(reservationRepository.save(any(Reservation.class)))
-                .thenReturn(reservation);
+        verify(resourceRepository).findById(1L);
+        verify(resourceRepository).delete(resource);
+    }
+    
+    @Test
+    void deleteResourceShouldThrowExceptionWhenNotFound() {
 
-        ReservationResponse response =
-                reservationService.updateReservation(
-                        1L,
-                        request
-                );
+        when(resourceRepository.findById(99L))
+                .thenReturn(Optional.empty());
 
-        assertEquals(
-                ReservationStatus.CONFIRMED,
-                response.getStatus()
+        org.junit.jupiter.api.Assertions.assertThrows(
+                com.amar.resource_booking.exception.ResourceNotFoundException.class,
+                () -> resourceService.deleteResource(99L)
         );
 
-        verify(reservationRepository)
-                .save(reservation);
-    }
-
-    @Test
-    void deleteReservationShouldDeleteReservation() {
-
-        reservation.setId(1L);
-
-        when(reservationRepository.findById(1L))
-                .thenReturn(Optional.of(reservation));
-
-        reservationService.deleteReservation(1L);
-
-        verify(reservationRepository)
-                .delete(reservation);
+        verify(resourceRepository).findById(99L);
     }
 }
