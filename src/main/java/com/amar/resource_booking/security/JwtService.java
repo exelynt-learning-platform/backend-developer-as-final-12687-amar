@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
 
 @Service
 public class JwtService {
@@ -20,6 +21,17 @@ public class JwtService {
 
     @Value("${jwt.expiration:3600000}")
     private long expirationTime;
+    
+    @PostConstruct
+    public void validateSecretKey() {
+        if (secretKey == null ||
+                secretKey.getBytes(StandardCharsets.UTF_8).length < 32) {
+
+            throw new IllegalStateException(
+                    "JWT secret must be at least 32 bytes long"
+            );
+        }
+    }
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(
@@ -70,4 +82,6 @@ public class JwtService {
                 .getExpiration()
                 .before(new Date());
     }
+    
+    
 }

@@ -2,10 +2,13 @@ package com.amar.resource_booking.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import io.jsonwebtoken.ExpiredJwtException;
 
 class JwtServiceTest {
 
@@ -37,7 +40,7 @@ class JwtServiceTest {
         assertNotNull(token);
         assertEquals("admin", jwtService.extractUsername(token));
     }
-    
+
     @Test
     void isTokenValidShouldReturnTrueForValidToken() {
 
@@ -48,7 +51,7 @@ class JwtServiceTest {
 
         assertEquals(true, result);
     }
-    
+
     @Test
     void isTokenValidShouldThrowExceptionForExpiredToken() {
 
@@ -60,9 +63,20 @@ class JwtServiceTest {
 
         String token = jwtService.generateToken("admin");
 
-        org.junit.jupiter.api.Assertions.assertThrows(
-                io.jsonwebtoken.ExpiredJwtException.class,
+        assertThrows(
+                ExpiredJwtException.class,
                 () -> jwtService.isTokenValid(token, "admin")
         );
+    }
+    
+    @Test
+    void isTokenValidShouldReturnFalseForDifferentUsername() {
+
+        String token = jwtService.generateToken("admin");
+
+        boolean result =
+                jwtService.isTokenValid(token, "user");
+
+        assertEquals(false, result);
     }
 }

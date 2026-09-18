@@ -192,6 +192,16 @@ public class ReservationService {
                                 "Reservation not found with id: " + id
                         ));
 
+        // ADMIN can cancel a reservation even if the resource is unavailable
+        if (request.getStatus() == ReservationStatus.CANCELLED) {
+            reservation.setStatus(ReservationStatus.CANCELLED);
+
+            Reservation updatedReservation =
+                    reservationRepository.save(reservation);
+
+            return mapToResponse(updatedReservation);
+        }
+
         Resource resource = resourceRepository.findById(
                 request.getResourceId()
         ).orElseThrow(() ->
@@ -203,13 +213,10 @@ public class ReservationService {
             );
         }
 
-        if (!request.getStartDate().isBefore(request.getEndDate())) {
-            throw new BadRequestException(
-                    "Start date must be before end date"
-            );
-        }
-
-       
+        validateDates(
+                request.getStartDate(),
+                request.getEndDate()
+        );
 
         boolean overlapping =
                 reservationRepository
@@ -220,6 +227,7 @@ public class ReservationService {
                                 getActiveStatuses(),
                                 id
                         );
+
         if (overlapping) {
             throw new BadRequestException(
                     "Resource is already reserved for the selected time"
@@ -240,7 +248,6 @@ public class ReservationService {
 
         return mapToResponse(updatedReservation);
     }
-
     public void deleteReservation(Long id) {
 
         Reservation reservation = reservationRepository.findById(id)

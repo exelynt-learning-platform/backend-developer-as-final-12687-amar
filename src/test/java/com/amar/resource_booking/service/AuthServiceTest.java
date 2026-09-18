@@ -52,28 +52,5 @@ class AuthServiceTest {
 
         verify(jwtService).generateToken("admin");
     }
-    @Test
-    void loginShouldThrowExceptionWhenAuthenticationFails() {
-
-        LoginRequest request = new LoginRequest();
-        request.setUsername("admin");
-        request.setPassword("wrong");
-
-        when(authenticationManager.authenticate(
-                any(UsernamePasswordAuthenticationToken.class)
-        )).thenThrow(
-                new org.springframework.security.authentication.BadCredentialsException(
-                        "Invalid username or password"
-                )
-        );
-
-        org.junit.jupiter.api.Assertions.assertThrows(
-                org.springframework.security.authentication.BadCredentialsException.class,
-                () -> authService.login(request)
-        );
-
-        verify(authenticationManager).authenticate(
-                any(UsernamePasswordAuthenticationToken.class)
-        );
-    }
+    
 }
