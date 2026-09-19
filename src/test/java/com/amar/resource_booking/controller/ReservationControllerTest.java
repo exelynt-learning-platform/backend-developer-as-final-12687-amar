@@ -20,6 +20,7 @@ import com.amar.resource_booking.dto.ReservationRequest;
 import com.amar.resource_booking.dto.ReservationResponse;
 import com.amar.resource_booking.entity.ReservationStatus;
 import com.amar.resource_booking.service.ReservationService;
+import com.amar.resource_booking.dto.ReservationFilterRequest;
 
 class ReservationControllerTest {
 
@@ -79,6 +80,17 @@ class ReservationControllerTest {
         when(authentication.getName())
                 .thenReturn("user");
 
+        ReservationFilterRequest filter =
+                new ReservationFilterRequest();
+
+        filter.setStatus(ReservationStatus.CONFIRMED);
+        filter.setMinPrice(new BigDecimal("100"));
+        filter.setMaxPrice(new BigDecimal("1000"));
+        filter.setPage(0);
+        filter.setSize(5);
+        filter.setSortBy("price");
+        filter.setSortDirection("desc");
+
         Page<ReservationResponse> expectedPage =
                 mock(Page.class);
 
@@ -96,13 +108,7 @@ class ReservationControllerTest {
         ResponseEntity<Page<ReservationResponse>> response =
                 reservationController.getMyReservations(
                         authentication,
-                        ReservationStatus.CONFIRMED,
-                        new BigDecimal("100"),
-                        new BigDecimal("1000"),
-                        0,
-                        5,
-                        "price",
-                        "desc"
+                        filter
                 );
 
         assertEquals(
@@ -119,6 +125,17 @@ class ReservationControllerTest {
     @Test
     void getAllReservationsShouldReturnOk() {
 
+        ReservationFilterRequest filter =
+                new ReservationFilterRequest();
+
+        filter.setStatus(ReservationStatus.PENDING);
+        filter.setMinPrice(new BigDecimal("100"));
+        filter.setMaxPrice(new BigDecimal("1000"));
+        filter.setPage(0);
+        filter.setSize(5);
+        filter.setSortBy("price");
+        filter.setSortDirection("asc");
+
         Page<ReservationResponse> expectedPage =
                 mock(Page.class);
 
@@ -134,13 +151,7 @@ class ReservationControllerTest {
 
         ResponseEntity<Page<ReservationResponse>> response =
                 reservationController.getAllReservations(
-                        ReservationStatus.PENDING,
-                        new BigDecimal("100"),
-                        new BigDecimal("1000"),
-                        0,
-                        5,
-                        "price",
-                        "asc"
+                        filter
                 );
 
         assertEquals(
@@ -153,7 +164,6 @@ class ReservationControllerTest {
                 response.getBody()
         );
     }
-
     @Test
     void getReservationByIdShouldReturnOkForAdmin() {
 

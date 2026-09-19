@@ -73,11 +73,11 @@ class SecurityConfigTest {
     }
     
     @Test
-    void userShouldNotCancelReservation() throws Exception {
+    void userShouldBeAllowedToAccessCancelEndpoint() throws Exception {
 
         mockMvc.perform(
                 put("/api/reservations/1/cancel")
                         .with(user("user").roles("USER"))
-        ).andExpect(status().isForbidden());
+        ).andExpect(status().isNotFound());
     }
 }

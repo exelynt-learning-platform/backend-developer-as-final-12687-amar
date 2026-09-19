@@ -1,6 +1,6 @@
 package com.amar.resource_booking.controller;
 
-import java.math.BigDecimal;
+
 
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
@@ -13,17 +13,18 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.validation.annotation.Validated;
 
 import com.amar.resource_booking.dto.ReservationRequest;
 import com.amar.resource_booking.dto.ReservationResponse;
-import com.amar.resource_booking.entity.ReservationStatus;
+
 import com.amar.resource_booking.service.ReservationService;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
+
+import com.amar.resource_booking.dto.ReservationFilterRequest;
 
 @RestController
 @RequestMapping("/api/reservations")
@@ -57,93 +58,40 @@ public class ReservationController {
     @GetMapping("/my")
     public ResponseEntity<Page<ReservationResponse>> getMyReservations(
             Authentication authentication,
-            @RequestParam(required = false)
-            ReservationStatus status,
-            @RequestParam(required = false)
-            BigDecimal minPrice,
-            @RequestParam(required = false)
-            BigDecimal maxPrice,
-            @RequestParam(defaultValue = "0")
-            @Min(
-                    value = 0,
-                    message = "Page cannot be negative"
-            )
-            int page,
-            @RequestParam(defaultValue = "5")
-            @Min(
-                    value = 1,
-                    message = "Size must be greater than 0"
-            )
-            int size,
-            @RequestParam(defaultValue = "id")
-            String sortBy,
-            @RequestParam(defaultValue = "asc")
-            String sortDirection) {
+            @Valid ReservationFilterRequest filter) {
 
         return ResponseEntity.ok(
                 reservationService.getMyReservations(
                         authentication.getName(),
-                        status,
-                        minPrice,
-                        maxPrice,
-                        page,
-                        size,
-                        sortBy,
-                        sortDirection
-                )
-        );
+                        filter.getStatus(),
+                        filter.getMinPrice(),
+                        filter.getMaxPrice(),
+                        filter.getPage(),
+                        filter.getSize(),
+                        filter.getSortBy(),
+                        filter.getSortDirection()));
     }
-
     @GetMapping
     public ResponseEntity<Page<ReservationResponse>> getAllReservations(
-            @RequestParam(required = false)
-            ReservationStatus status,
-            @RequestParam(required = false)
-            BigDecimal minPrice,
-            @RequestParam(required = false)
-            BigDecimal maxPrice,
-            @RequestParam(defaultValue = "0")
-            @Min(
-                    value = 0,
-                    message = "Page cannot be negative"
-            )
-            int page,
-            @RequestParam(defaultValue = "5")
-            @Min(
-                    value = 1,
-                    message = "Size must be greater than 0"
-            )
-            int size,
-            @RequestParam(defaultValue = "id")
-            String sortBy,
-            @RequestParam(defaultValue = "asc")
-            String sortDirection) {
+            @Valid ReservationFilterRequest filter) {
 
         return ResponseEntity.ok(
                 reservationService.getAllReservations(
-                        status,
-                        minPrice,
-                        maxPrice,
-                        page,
-                        size,
-                        sortBy,
-                        sortDirection
-                )
-        );
+                        filter.getStatus(),
+                        filter.getMinPrice(),
+                        filter.getMaxPrice(),
+                        filter.getPage(),
+                        filter.getSize(),
+                        filter.getSortBy(),
+                        filter.getSortDirection()));
     }
-
     @GetMapping("/{id}")
     public ResponseEntity<ReservationResponse> getReservationById(
             @PathVariable Long id,
             Authentication authentication) {
 
         String username = authentication.getName();
-
-        boolean isAdmin = authentication.getAuthorities()
-                .stream()
-                .anyMatch(authority ->
-                        authority.getAuthority().equals("ROLE_ADMIN")
-                );
+        boolean isAdmin = isAdmin(authentication);
 
         return ResponseEntity.ok(
                 reservationService.getReservationById(
@@ -182,15 +130,21 @@ public class ReservationController {
             Authentication authentication) {
 
         String username = authentication.getName();
-
-        boolean isAdmin = authentication.getAuthorities().stream()
-                .anyMatch(authority ->
-                        authority.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAdmin = isAdmin(authentication);
 
         return ResponseEntity.ok(
                 reservationService.cancelReservation(
                         id,
                         username,
-                        isAdmin));
+                        isAdmin
+                )
+        );
+    }
+    
+    private boolean isAdmin(Authentication authentication) {
+        return authentication.getAuthorities()
+                .stream()
+                .anyMatch(authority ->
+                        authority.getAuthority().equals("ROLE_ADMIN"));
     }
 }

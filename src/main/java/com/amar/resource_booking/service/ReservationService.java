@@ -185,16 +185,9 @@ public class ReservationService {
 
         // ADMIN can cancel a reservation even if the resource is unavailable
         
-        Resource resource = resourceRepository.findById(
-                request.getResourceId()
-        ).orElseThrow(() ->
-                new ResourceNotFoundException("Resource not found"));
+        Resource resource = resourceRepository.findByIdForUpdate(request.getResourceId())
+                .orElseThrow(() -> new ResourceNotFoundException("Resource not found"));
 
-        if (!resource.isAvailable()) {
-            throw new BadRequestException(
-                    "Resource is not available"
-            );
-        }
 
         validateDates(
                 request.getStartDate(),

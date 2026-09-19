@@ -379,8 +379,8 @@ class ReservationServiceTest {
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.of(reservation));
 
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
+        when(resourceRepository.findByIdForUpdate(1L))
+        .thenReturn(Optional.of(resource));
 
         when(reservationRepository
                 .existsOverlappingReservationForUpdate(
@@ -474,5 +474,25 @@ class ReservationServiceTest {
 
         verify(reservationRepository)
                 .save(reservation);
+    }
+    @Test
+    void cancelReservationShouldRejectAnotherUser() {
+
+        reservation.setId(1L);
+
+        when(reservationRepository.findById(1L))
+                .thenReturn(Optional.of(reservation));
+
+        assertThrows(
+                ForbiddenException.class,
+                () -> reservationService.cancelReservation(
+                        1L,
+                        "another",
+                        false
+                )
+        );
+
+        verify(reservationRepository, never())
+                .save(any(Reservation.class));
     }
 }

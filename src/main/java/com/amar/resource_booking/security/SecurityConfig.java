@@ -189,8 +189,11 @@ public class SecurityConfig {
                                 "/api/reservations/*"
                         ).hasAnyRole("USER", "ADMIN")
                         
-                        .requestMatchers(HttpMethod.PUT, "/api/reservations/*/cancel")
-                        .hasRole("ADMIN")
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/api/reservations/*/cancel"
+                        )
+                        .hasAnyRole("USER", "ADMIN")
 
                         // ADMIN only
                         .requestMatchers(
