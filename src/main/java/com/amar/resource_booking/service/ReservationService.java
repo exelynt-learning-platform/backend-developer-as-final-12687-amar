@@ -316,6 +316,10 @@ public class ReservationService {
             throw new ForbiddenException(
                     "You are not allowed to cancel this reservation");
         }
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            throw new BadRequestException(
+                    "Reservation is already cancelled");
+        }
 
         reservation.setStatus(ReservationStatus.CANCELLED);
 
