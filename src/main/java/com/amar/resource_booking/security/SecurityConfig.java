@@ -141,12 +141,11 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // Resource - USER + ADMIN can read
-                        .requestMatchers(
-                                HttpMethod.GET,
-                                "/api/resources",
-                                "/api/resources/**"
-                        ).hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/resources")
+                        .hasAnyRole("USER", "ADMIN")
 
+                        .requestMatchers(HttpMethod.GET, "/api/resources/*")
+                        .hasAnyRole("USER", "ADMIN")
                         // Resource - ADMIN only
                         .requestMatchers(
                                 HttpMethod.POST,

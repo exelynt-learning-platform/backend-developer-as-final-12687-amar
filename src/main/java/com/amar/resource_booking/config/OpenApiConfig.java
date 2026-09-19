@@ -8,8 +8,9 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-
+import org.springframework.context.annotation.Profile;
 @Configuration
+@Profile("dev")
 public class OpenApiConfig {
 
     @Bean
@@ -18,24 +19,17 @@ public class OpenApiConfig {
         return new OpenAPI()
                 .info(new Info()
                         .title("Resource Booking API")
-                        .description(
-                                "REST API for resource booking with JWT authentication and role-based access"
-                        )
-                        .version("1.0")
-                )
-                .components(
-                        new Components()
-                                .addSecuritySchemes(
-                                        "bearerAuth",
-                                        new SecurityScheme()
-                                                .type(SecurityScheme.Type.HTTP)
-                                                .scheme("bearer")
-                                                .bearerFormat("JWT")
-                                )
-                )
+                        .description("REST API for resource booking with JWT authentication and role-based access")
+                        .version("1.0"))
+                .components(new Components()
+                        .addSecuritySchemes(
+                                "bearerAuth",
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.HTTP)
+                                        .scheme("bearer")
+                                        .bearerFormat("JWT")))
                 .addSecurityItem(
                         new SecurityRequirement()
-                                .addList("bearerAuth")
-                );
+                                .addList("bearerAuth"));
     }
 }

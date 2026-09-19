@@ -23,6 +23,7 @@ import com.amar.resource_booking.repository.ResourceRepository;
 import com.amar.resource_booking.repository.UserRepository;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
+import com.amar.resource_booking.exception.UserNotFoundException;
 
 @Service
 @Transactional
@@ -46,9 +47,11 @@ public class ReservationService {
             ReservationRequest request,
             String username) {
 
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
+    	User user = userRepository.findByUsername(username)
+    	        .orElseThrow(() ->
+    	                new UserNotFoundException(
+    	                        "User not found"
+    	                ));
 
         Resource resource = resourceRepository.findById(
                 request.getResourceId()
@@ -113,8 +116,7 @@ public class ReservationService {
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found"));
-
+                        new UserNotFoundException("User not found"));
        
 
         Sort sort = createSort(sortBy, sortDirection);
@@ -193,15 +195,7 @@ public class ReservationService {
                         ));
 
         // ADMIN can cancel a reservation even if the resource is unavailable
-        if (request.getStatus() == ReservationStatus.CANCELLED) {
-            reservation.setStatus(ReservationStatus.CANCELLED);
-
-            Reservation updatedReservation =
-                    reservationRepository.save(reservation);
-
-            return mapToResponse(updatedReservation);
-        }
-
+        
         Resource resource = resourceRepository.findById(
                 request.getResourceId()
         ).orElseThrow(() ->
@@ -322,5 +316,21 @@ public class ReservationService {
                 reservation.getPrice(),
                 reservation.getStatus()
         );
+    }
+    
+    public ReservationResponse cancelReservation(Long id) {
+
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Reservation not found with id: " + id
+                        ));
+
+        reservation.setStatus(ReservationStatus.CANCELLED);
+
+        Reservation updatedReservation =
+                reservationRepository.save(reservation);
+
+        return mapToResponse(updatedReservation);
     }
 }

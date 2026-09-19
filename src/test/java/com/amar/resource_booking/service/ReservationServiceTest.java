@@ -422,40 +422,13 @@ class ReservationServiceTest {
                 .delete(reservation);
     }
     
+   
+    
     @Test
-    void updateReservationShouldAllowCancellation() {
+    void cancelReservationShouldChangeStatusToCancelled() {
 
-        User user = new User(
-                "user",
-                "password",
-                Role.USER
-        );
-        user.setId(1L);
-
-        Resource resource = new Resource(
-                "Meeting Room",
-                "Test room",
-                "ROOM",
-                false,
-                new BigDecimal("500.00")
-        );
-        resource.setId(1L);
-
-        Reservation reservation = new Reservation();
         reservation.setId(1L);
-        reservation.setUser(user);
-        reservation.setResource(resource);
-        reservation.setStartDate(
-                LocalDateTime.of(2026, 9, 20, 10, 0)
-        );
-        reservation.setEndDate(
-                LocalDateTime.of(2026, 9, 20, 12, 0)
-        );
-        reservation.setPrice(new BigDecimal("500.00"));
         reservation.setStatus(ReservationStatus.CONFIRMED);
-
-        ReservationRequest request = new ReservationRequest();
-        request.setStatus(ReservationStatus.CANCELLED);
 
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.of(reservation));
@@ -464,15 +437,19 @@ class ReservationServiceTest {
                 .thenReturn(reservation);
 
         ReservationResponse response =
-                reservationService.updateReservation(1L, request);
+                reservationService.cancelReservation(1L);
 
         assertNotNull(response);
+
         assertEquals(
                 ReservationStatus.CANCELLED,
                 response.getStatus()
         );
 
-        verify(reservationRepository).findById(1L);
-        verify(reservationRepository).save(reservation);
+        verify(reservationRepository)
+                .findById(1L);
+
+        verify(reservationRepository)
+                .save(reservation);
     }
 }

@@ -14,9 +14,19 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Index;
 
 @Entity
-@Table(name = "reservations")
+@Table(
+        name = "reservations",
+        indexes = {
+                @Index(name = "idx_reservation_user", columnList = "user_id"),
+                @Index(name = "idx_reservation_resource", columnList = "resource_id"),
+                @Index(name = "idx_reservation_status", columnList = "status"),
+                @Index(name = "idx_reservation_dates", columnList = "start_date, end_date"),
+                @Index(name = "idx_reservation_price", columnList = "price")
+        }
+)
 public class Reservation {
 
     @Id

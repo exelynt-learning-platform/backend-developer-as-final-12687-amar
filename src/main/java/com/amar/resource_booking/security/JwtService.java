@@ -22,6 +22,12 @@ public class JwtService {
     @Value("${jwt.expiration:3600000}")
     private long expirationTime;
     
+    @Value("${jwt.issuer}")
+    private String issuer;
+
+    @Value("${jwt.audience}")
+    private String audience;
+    
     @PostConstruct
     public void validateSecretKey() {
         if (secretKey == null ||
@@ -49,25 +55,31 @@ public class JwtService {
 
         return Jwts.builder()
                 .subject(username)
+                .issuer(issuer)
+                .audience().add(audience).and()
                 .issuedAt(currentDate)
                 .expiration(expirationDate)
                 .signWith(getSigningKey())
                 .compact();
+        
     }
 
     public String extractUsername(String token) {
         return getClaims(token).getSubject();
     }
 
-    private Claims getClaims(String token) {
+   
 
-        return Jwts.parser()
-                .verifyWith(getSigningKey())
-                .build()
-                .parseSignedClaims(token)
-                .getPayload();
-    }
+    	private Claims getClaims(String token) {
 
+    	    return Jwts.parser()
+    	            .verifyWith(getSigningKey())
+    	            .requireIssuer(issuer)
+    	            .requireAudience(audience)
+    	            .build()
+    	            .parseSignedClaims(token)
+    	            .getPayload();
+    	}
     public boolean isTokenValid(String token, String username) {
 
         String tokenUsername = extractUsername(token);

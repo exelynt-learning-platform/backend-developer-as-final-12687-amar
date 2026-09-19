@@ -175,4 +175,12 @@ public class ReservationController {
 
         return ResponseEntity.noContent().build();
     }
+    
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<ReservationResponse> cancelReservation(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                reservationService.cancelReservation(id));
+    }
 }
