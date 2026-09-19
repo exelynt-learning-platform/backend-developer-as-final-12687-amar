@@ -53,11 +53,10 @@ public class ReservationService {
     	                        "User not found"
     	                ));
 
-        Resource resource = resourceRepository.findById(
-                request.getResourceId()
-        ).orElseThrow(() ->
-                new ResourceNotFoundException("Resource not found"));
-
+    	Resource resource = resourceRepository
+    	        .findByIdForUpdate(request.getResourceId())
+    	        .orElseThrow(() ->
+    	                new ResourceNotFoundException("Resource not found"));
         if (!resource.isAvailable()) {
             throw new BadRequestException("Resource is not available");
         }
@@ -107,12 +106,8 @@ public class ReservationService {
             String sortBy,
             String sortDirection) {
 
-        if (minPrice != null && maxPrice != null
-                && minPrice.compareTo(maxPrice) > 0) {
-            throw new BadRequestException(
-                    "minPrice cannot be greater than maxPrice"
-            );
-        }
+        
+        validatePriceRange(minPrice, maxPrice);
 
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() ->
@@ -139,14 +134,8 @@ public class ReservationService {
             int size,
             String sortBy,
             String sortDirection) {
-
-        if (minPrice != null && maxPrice != null
-                && minPrice.compareTo(maxPrice) > 0) {
-            throw new BadRequestException(
-                    "minPrice cannot be greater than maxPrice"
-            );
-        }
-
+    	validatePriceRange(minPrice, maxPrice);
+       
         Sort sort = createSort(sortBy, sortDirection);
 
       
@@ -318,19 +307,42 @@ public class ReservationService {
         );
     }
     
-    public ReservationResponse cancelReservation(Long id) {
+    public ReservationResponse cancelReservation(
+            Long id,
+            String username,
+            boolean isAdmin) {
 
         Reservation reservation = reservationRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
-                                "Reservation not found with id: " + id
-                        ));
+                                "Reservation not found with id: " + id));
+
+        if (!isAdmin &&
+                !reservation.getUser().getUsername().equals(username)) {
+
+            throw new ForbiddenException(
+                    "You are not allowed to cancel this reservation");
+        }
 
         reservation.setStatus(ReservationStatus.CANCELLED);
 
-        Reservation updatedReservation =
+        Reservation cancelledReservation =
                 reservationRepository.save(reservation);
 
-        return mapToResponse(updatedReservation);
+        return mapToResponse(cancelledReservation);
+    }
+    
+    private void validatePriceRange(
+            BigDecimal minPrice,
+            BigDecimal maxPrice) {
+
+        if (minPrice != null
+                && maxPrice != null
+                && minPrice.compareTo(maxPrice) > 0) {
+
+            throw new BadRequestException(
+                    "minPrice cannot be greater than maxPrice"
+            );
+        }
     }
 }

@@ -1,17 +1,19 @@
 package com.amar.resource_booking.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.amar.resource_booking.entity.Resource;
-import org.springframework.data.jpa.repository.Lock;
+
 import jakarta.persistence.LockModeType;
 
 public interface ResourceRepository extends JpaRepository<Resource, Long> {
-	
-	 @Override
-	    @Lock(LockModeType.PESSIMISTIC_WRITE)
-	    java.util.Optional<Resource> findById(Long id);
-	
-	
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM Resource r WHERE r.id = :id")
+    Optional<Resource> findByIdForUpdate(@Param("id") Long id);
 }

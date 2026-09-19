@@ -50,6 +50,17 @@ class JwtAuthenticationFilterTest {
                 3600000L
         );
 
+        org.springframework.test.util.ReflectionTestUtils.setField(
+                jwtService,
+                "issuer",
+                "resource-booking-api"
+        );
+
+        org.springframework.test.util.ReflectionTestUtils.setField(
+                jwtService,
+                "audience",
+                "resource-booking-client"
+        );
         userRepository = mock(UserRepository.class);
 
         filter = new JwtAuthenticationFilter(

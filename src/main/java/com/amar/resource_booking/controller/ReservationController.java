@@ -178,9 +178,19 @@ public class ReservationController {
     
     @PutMapping("/{id}/cancel")
     public ResponseEntity<ReservationResponse> cancelReservation(
-            @PathVariable Long id) {
+            @PathVariable Long id,
+            Authentication authentication) {
+
+        String username = authentication.getName();
+
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority ->
+                        authority.getAuthority().equals("ROLE_ADMIN"));
 
         return ResponseEntity.ok(
-                reservationService.cancelReservation(id));
+                reservationService.cancelReservation(
+                        id,
+                        username,
+                        isAdmin));
     }
 }

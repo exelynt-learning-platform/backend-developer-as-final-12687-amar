@@ -9,16 +9,22 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import java.time.LocalDateTime;
+
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
-import com.amar.resource_booking.exception.UserNotFoundException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+	private static final Logger log =
+	        LoggerFactory.getLogger(GlobalExceptionHandler.class);
+	
+	
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationException(
             MethodArgumentNotValidException exception) {
@@ -143,6 +149,12 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGeneralException(
             Exception exception,
             HttpServletRequest request) {
+
+        log.error(
+                "Unexpected error on {}",
+                request.getRequestURI(),
+                exception
+        );
 
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),

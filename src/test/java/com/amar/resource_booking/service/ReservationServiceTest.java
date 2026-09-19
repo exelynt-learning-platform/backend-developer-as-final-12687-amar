@@ -30,6 +30,10 @@ import com.amar.resource_booking.exception.ResourceNotFoundException;
 import com.amar.resource_booking.repository.ReservationRepository;
 import com.amar.resource_booking.repository.ResourceRepository;
 import com.amar.resource_booking.repository.UserRepository;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 
 @ExtendWith(MockitoExtension.class)
 class ReservationServiceTest {
@@ -106,8 +110,8 @@ class ReservationServiceTest {
         when(userRepository.findByUsername("user"))
                 .thenReturn(Optional.of(user));
 
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
+        when(resourceRepository.findByIdForUpdate(1L))
+        .thenReturn(Optional.of(resource));
 
         when(reservationRepository
                 .existsOverlappingReservation(
@@ -151,9 +155,8 @@ class ReservationServiceTest {
         when(userRepository.findByUsername("user"))
                 .thenReturn(Optional.of(user));
 
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
-
+        when(resourceRepository.findByIdForUpdate(1L))
+        .thenReturn(Optional.of(resource));
         assertThrows(
                 BadRequestException.class,
                 () -> reservationService.createReservation(
@@ -182,8 +185,8 @@ class ReservationServiceTest {
         when(userRepository.findByUsername("user"))
                 .thenReturn(Optional.of(user));
 
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
+        when(resourceRepository.findByIdForUpdate(1L))
+        .thenReturn(Optional.of(resource));
 
         assertThrows(
                 BadRequestException.class,
@@ -202,9 +205,8 @@ class ReservationServiceTest {
         when(userRepository.findByUsername("user"))
                 .thenReturn(Optional.of(user));
 
-        when(resourceRepository.findById(1L))
-                .thenReturn(Optional.of(resource));
-
+        when(resourceRepository.findByIdForUpdate(1L))
+        .thenReturn(Optional.of(resource));
         when(reservationRepository
                 .existsOverlappingReservation(
                         anyLong(),
@@ -422,13 +424,30 @@ class ReservationServiceTest {
                 .delete(reservation);
     }
     
-   
-    
     @Test
-    void cancelReservationShouldChangeStatusToCancelled() {
+    void cancelReservationShouldCancelReservation() {
 
+        User user = new User();
+        user.setId(1L);
+        user.setUsername("user");
+        user.setRole(Role.USER);
+
+        Resource resource = new Resource();
+        resource.setId(1L);
+        resource.setName("Meeting Room");
+        resource.setDescription("Test room");
+        resource.setType("ROOM");
+        resource.setAvailable(true);
+        resource.setPrice(new BigDecimal("100.00"));
+
+        Reservation reservation = new Reservation();
         reservation.setId(1L);
-        reservation.setStatus(ReservationStatus.CONFIRMED);
+        reservation.setUser(user);
+        reservation.setResource(resource);
+        reservation.setStatus(ReservationStatus.PENDING);
+
+        assertNotNull(reservation.getUser());
+        assertNotNull(reservation.getResource());
 
         when(reservationRepository.findById(1L))
                 .thenReturn(Optional.of(reservation));
@@ -437,7 +456,11 @@ class ReservationServiceTest {
                 .thenReturn(reservation);
 
         ReservationResponse response =
-                reservationService.cancelReservation(1L);
+                reservationService.cancelReservation(
+                        1L,
+                        "user",
+                        false
+                );
 
         assertNotNull(response);
 

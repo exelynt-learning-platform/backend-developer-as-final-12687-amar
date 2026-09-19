@@ -15,17 +15,17 @@ import org.springframework.context.annotation.Profile;
 @Profile("dev")
 public class DataInitializer {
 
-    @Value("${seed.admin.username:admin}")
-    private String adminUsername;
+	@Value("${seed.admin.username}")
+	private String adminUsername;
 
-    @Value("${seed.admin.password:admin}")
-    private String adminPassword;
+	@Value("${seed.admin.password}")
+	private String adminPassword;
 
-    @Value("${seed.user.username:user}")
-    private String userUsername;
+	@Value("${seed.user.username}")
+	private String userUsername;
 
-    @Value("${seed.user.password:password}")
-    private String userPassword;
+	@Value("${seed.user.password}")
+	private String userPassword;
 
     @Bean
     CommandLineRunner createUsers(

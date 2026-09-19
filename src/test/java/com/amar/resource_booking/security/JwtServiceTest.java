@@ -30,6 +30,17 @@ class JwtServiceTest {
                 "expirationTime",
                 3600000L
         );
+        ReflectionTestUtils.setField(
+                jwtService,
+                "issuer",
+                "resource-booking-api"
+        );
+
+        ReflectionTestUtils.setField(
+                jwtService,
+                "audience",
+                "resource-booking-client"
+        );
     }
 
     @Test

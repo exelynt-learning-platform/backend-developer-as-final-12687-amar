@@ -14,6 +14,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -69,5 +70,14 @@ class SecurityConfigTest {
                         .with(user("user").roles("USER"))
         )
         .andExpect(status().isOk());
+    }
+    
+    @Test
+    void userShouldNotCancelReservation() throws Exception {
+
+        mockMvc.perform(
+                put("/api/reservations/1/cancel")
+                        .with(user("user").roles("USER"))
+        ).andExpect(status().isForbidden());
     }
 }

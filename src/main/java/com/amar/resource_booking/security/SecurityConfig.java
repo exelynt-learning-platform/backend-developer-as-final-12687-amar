@@ -151,6 +151,7 @@ public class SecurityConfig {
                                 HttpMethod.POST,
                                 "/api/resources"
                         ).hasRole("ADMIN")
+                        
 
                         .requestMatchers(
                                 HttpMethod.PUT,
@@ -187,6 +188,9 @@ public class SecurityConfig {
                                 HttpMethod.GET,
                                 "/api/reservations/*"
                         ).hasAnyRole("USER", "ADMIN")
+                        
+                        .requestMatchers(HttpMethod.PUT, "/api/reservations/*/cancel")
+                        .hasRole("ADMIN")
 
                         // ADMIN only
                         .requestMatchers(
